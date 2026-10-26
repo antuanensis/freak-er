@@ -1,6 +1,6 @@
 # Target-device validation record
 
-Status: **User reports r2 works. r3 device validation pending.**
+Status: **User reports r2 works. r3/r4 device validation pending.**
 
 On 2026-10-25, the user reported that per-step probability works on the
 experimental MFF and that the OLED shows the editor's A/E/P/%/T fields.
@@ -23,6 +23,12 @@ first-note editing. It also retires more factory diagnostics and removes the old
 position hook. **No r3 device result exists.** Its 53 passing local Python tests
 are emulation/tooling evidence only.
 
+r4 is a behavior-preserving size pass: 3,662/3,809 code bytes, twelve fixed
+runtime bytes. All 54 local Python tests pass, including 39 scenarios compared
+on r3 and r4 with identical state/messages and no per-operation observed stack
+increase. **There is no r4 hardware result.** New placement/passthrough/feature
+checks remain required even though controls and proven regions are unchanged.
+
 Record a dated result per stage, artifact SHA-256, conditions, clock source/BPM,
 sequence length, workload and duration. Keep serial/calibration data private.
 Use [recovery.md](recovery.md) for preparation and installation order.
@@ -37,6 +43,7 @@ Use [recovery.md](recovery.md) for preparation and installation order.
 | Live controls | Both Shift/Record release orders, Rate selection without moving playback, Shift+Rate clamping, Rate push Sync, Oct/Mod, A/B/preset closure. | Pending |
 | Modulation | Existing/new targets, four-track rejection, positive/negative matrix, all active oscillator/sample destinations, repeated relative turns, future/current edits and smoothing. | User reports r2 works; detailed destination/smoothing coverage pending; r3 untested |
 | r3 operations | Global curves retain relative differences, saturation/zero/sign behavior, Shift edits one step; all stock destinations including matrix/sample. Oct tap vs 600-ms hold; Shift+Hold only clears locks/probability. Copy across steps 1/64 in A/B, cancellation/release ordering. Preset edits first note only, preserves chord tones/rests. | Pending |
+| r4 size pass | Staged boot/update, unchanged r3 controls/display/persistence, clocks/audio/MIDI/interrupt load and hardware stack margin after relocation. | Pending |
 | Preservation | Keyboard/MIDI/arp unaffected; silent steps retain modulation; no stuck notes, parameter jumps or unwanted recording. | Pending |
 | Persistence | Save/reboot/load, A/B copy/reload/clear, legacy presets, MCC import/export and stock downgrade/resave/reinstall. | Pending |
 | Load/endurance | Extended playback/editing; audio continuity, MIDI timing, stack/interrupt behavior compared with stock. | Pending |

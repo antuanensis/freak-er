@@ -40,7 +40,7 @@ stock-test: build/libfreaklocks.so
 	$(UV) run --project $(UPSTREAM) --frozen python -m unittest discover -s tests -p 'test_stock_sequencer.py' -v
 
 native-test:
-	$(UV) run --project $(UPSTREAM) --frozen python -m unittest discover -s tests -p 'test_native.py' -v
+	$(UV) run --project $(UPSTREAM) --frozen python -m unittest discover -s tests -p 'test_native*.py' -v
 
 setup:
 	$(UV) sync --project $(UPSTREAM) --frozen

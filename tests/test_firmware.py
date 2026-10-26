@@ -125,6 +125,12 @@ class OfficialFirmware(unittest.TestCase):
             self.assertEqual(report["output_sha256"], hashlib.sha256(result).hexdigest())
             self.assertFalse(report["device_tested"])
             self.assertEqual(report["stage"], "features")
+            self.assertEqual(sum(r["used_bytes"] for r in report["regions"]), report["native_bytes"])
+            self.assertEqual(
+                sum(r["free_bytes"] for r in report["regions"]), report["capacity_bytes"] - report["native_bytes"]
+            )
+            self.assertTrue(report["stack_frame_bytes"])
+            self.assertIn("-Oz", report["compiler_arguments"])
             with contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(firmware.main(args), 1)
             self.assertEqual(output.read_bytes(), result)

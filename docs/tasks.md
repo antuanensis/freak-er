@@ -4,7 +4,8 @@
 
 Only per-step probability and live editing inside stock's A/B, shared 4..64-step
 sequencer and four existing modulation tracks. [Spec 004](specs/004-live-editor-operations.md), extending spec 003,
-controls scope; the broader idea.md remains deferred.
+controls behavior. [Spec 005](specs/005-sequencer-size-pass.md) covers the r4
+size pass; the broader idea.md remains deferred.
 
 ## Completed local implementation
 
@@ -43,9 +44,19 @@ for all six local stage artifacts; see [revision records](revisions.md). Local
 manual/editor files and generated/private artifacts remain ignored. No remote or
 push is part of this checkpoint.
 
-Next implementation: a separate size pass that preserves all r3 behavior,
-storage and twelve-byte runtime state. Measure complete linked savings before
-accepting changes. No shrink source change or new feature is included here.
+The initial checkpoint contains no size changes. The separate r4 source checkpoint
+saves 116 code bytes, preserving all r3 behavior and the
+twelve-byte runtime. No new feature is included. [Measured results](size-pass.md):
+
+- [x] Replace indirect fixed-address calls/returns with direct stock branches.
+- [x] Extract only the scaling loop; reject candidates with stack regressions.
+- [x] Pass all 54 local Python tests, including 39 scenarios compared on r3/r4.
+- [x] Record compiler flags/stack frames and per-region occupancy in manifests.
+- [x] Build and independently reproduce all three r4 stages and full manifests;
+  preserve all six r2/r3 image fingerprints and the source checkpoint.
+
+Next acceptance work is staged r4 device validation; future features need new
+feasibility work. The r4 shrink is checkpointed separately; no r4 flash is recorded.
 
 After measured shrinking, research priorities are: per-key AFX-style recall,
 Brownian through the existing LFO, two-state modulation-matrix morphing,
@@ -64,7 +75,7 @@ or a guarantee of fitting one image. Broader idea.md work remains speculative.
    downgrade/resave compatibility of metadata.
 6. Run extended stability and compare stack/timing/audio behavior with stock.
 
-Record actual results in [hardware validation](hardware-validation.md). User-reported probability and positive r2 operation are recorded there; r3 and
+Record actual results in [hardware validation](hardware-validation.md). User-reported probability and positive r2 operation are recorded there; r3/r4 and
 detailed gates remain open.
 Build artifacts alone do not close any gate. See
 [recovery/install procedure](recovery.md).
@@ -77,4 +88,5 @@ this milestone. Formatting every destination's OLED value in physical units is
 also deferred; current display reports its stored snapshot value. Editing chord
 voices beyond the first note, creating notes on rests and a copy indicator are
 not implemented. Further features need measured code savings or newly proven
-space; only 31 bytes remain.
+space; r4 has 147 remaining bytes, with a largest current region tail of 133.
+This does not establish that any additional requested feature fits.

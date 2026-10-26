@@ -6,7 +6,6 @@
 #define U8(a) (*(volatile uint8_t *)(uintptr_t)(a))
 #define U16(a) (*(volatile uint16_t *)(uintptr_t)(a))
 #define U32(a) (*(volatile uint32_t *)(uintptr_t)(a))
-#define FN(a, type) ((type)(uintptr_t)((a) | 1u))
 #define KEEP __attribute__((noinline, used))
 #define TRAMP __attribute__((naked, noinline, used))
 #define SEQ 0x20000eecu
@@ -25,11 +24,27 @@
 #define FREAKER_PASSTHROUGH 0
 #endif
 
-typedef uint32_t (*F1)(uint32_t);
-typedef uint32_t (*F2)(uint32_t, uint32_t);
-typedef uint32_t (*F3)(uint32_t, uint32_t, uint32_t);
-typedef uint32_t (*F4)(uint32_t, uint32_t, uint32_t, uint32_t);
-typedef uint32_t (*F6)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+/* Undefined .abs symbols keep calls relocatable until placement. The pinned
+ * linker resolves them through these absolute symbols, without address pools. */
+#define STOCK_SYMBOL(name, address) __asm__(".global " #name "\n.equ " #name ", " #address)
+#define STOCK(name, address, ...) \
+    extern uint32_t name(__VA_ARGS__) __asm__(#name ".abs"); \
+    STOCK_SYMBOL(name, address)
+STOCK(stock_init, 0x0800e730, uint32_t, uint32_t, uint32_t, uint32_t);
+STOCK(stock_advance, 0x080281f8, uint32_t);
+STOCK(stock_close, 0x08055e40, uint32_t);
+STOCK(stock_post, 0x080558c0, uint32_t, uint32_t);
+STOCK(stock_scale, 0x0800e644, uint32_t, uint32_t);
+STOCK(stock_target, 0x08027fcc, uint32_t, uint32_t, uint32_t);
+STOCK(stock_send, 0x0802682c, uint32_t, uint32_t, uint32_t);
+STOCK(stock_button, 0x08043224, uint32_t, uint32_t, uint32_t, uint32_t);
+STOCK(stock_encoder, 0x08042bc8, uint32_t, uint32_t, uint32_t, uint32_t);
+STOCK(stock_pot, 0x08040220, uint32_t, uint32_t, uint32_t, uint32_t);
+STOCK(stock_poll, 0x08039da4, uint32_t);
+STOCK(stock_text, 0x080557e8, uint32_t, uint32_t, uint32_t);
+STOCK(stock_widget, 0x0805579c, uint32_t, uint32_t, uint32_t);
+STOCK_SYMBOL(encoder_resume, 0x0802c484);
+STOCK_SYMBOL(popup_resume, 0x08052c2e);
 typedef struct {
     volatile uint32_t random;
     uint8_t flags; /* Low four bits: UI scope. Bits 4..6: track (7 = none). */
@@ -49,7 +64,7 @@ static inline void select_track(uint32_t track) {
  * stock prologues and a branch back. No proprietary instructions in source. */
 TRAMP uint32_t original_set(uint32_t a, uint32_t b, uint32_t c, uint32_t d) { __asm__(".space 8"); }
 TRAMP uint32_t original_note(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f) { __asm__(".space 8"); }
-#define original_send(a, b, c) FN(0x0802682cu, F3)(a, b, c)
+#define original_send(a, b, c) stock_send(a, b, c)
 TRAMP uint32_t original_load(uint32_t a, uint32_t b, uint32_t c, uint32_t d) { __asm__(".space 8"); }
 TRAMP uint32_t original_clear(uint32_t a, uint32_t b) { __asm__(".space 8"); }
 TRAMP uint32_t original_transport(uint32_t a, uint32_t b) { __asm__(".space 8"); }
@@ -82,7 +97,7 @@ KEEP void set_probability(uint32_t value) {
 }
 
 KEEP uint32_t boot(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
-    uint32_t result = FN(0x0800e730u, F4)(a, b, c, d);
+    uint32_t result = stock_init(a, b, c, d);
     S->random = 42;
     S->flags = 0x70;
     S->allowed = 1;
@@ -91,7 +106,7 @@ KEEP uint32_t boot(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
 }
 
 KEEP uint32_t boundary(uint32_t sequence) {
-    uint32_t step = FN(0x080281f8u, F1)(sequence);
+    uint32_t step = stock_advance(sequence);
     if (FREAKER_PASSTHROUGH) return step;
     uint32_t mode = U8(0x20003ac4u);
     if (mode < 2u || mode > 3u) return step;
@@ -115,7 +130,7 @@ KEEP void close_editor(void) {
     if (S->flags & EDIT) {
         S->flags &= (uint8_t)~(EDIT | RAW_VALID);
         S->scope = 0;
-        FN(0x08055e40u, F1)(REQUEST);
+        stock_close(REQUEST);
     }
 }
 
@@ -152,7 +167,7 @@ KEEP uint32_t editor_available(void) {
 }
 
 KEEP void post_editor(void) {
-    FN(0x080558c0u, F2)(REQUEST, 0x700);
+    stock_post(REQUEST, 0x700);
 }
 
 KEEP uint32_t raw_parameter(uint32_t object, uint32_t parameter) {
@@ -185,18 +200,18 @@ KEEP uint32_t get_parameter(uint32_t object, uint32_t parameter) {
 }
 
 KEEP uint32_t scaled_parameter(uint32_t object, uint32_t parameter) {
-    if (FREAKER_PASSTHROUGH) return FN(0x0800e644u, F2)(object, parameter);
+    if (FREAKER_PASSTHROUGH) return stock_scale(object, parameter);
     uint32_t value = panel_value(object, parameter);
     uint32_t index = parameter & 255u;
     uint32_t group = (parameter & 0xffffu) >> 8;
     if (value == raw_parameter(object, parameter))
-        return FN(0x0800e644u, F2)(object, parameter);
+        return stock_scale(object, parameter);
     /* This pure stock scaler reads only the value/metadata table pointers.
      * Supply one local value without changing any global value or pointer. */
     uint32_t view[36];
     view[11] = (uint32_t)(uintptr_t)&value - index * 2u;
     view[35] = U32(object + 0x8cu + group * 4u);
-    return FN(0x0800e644u, F2)((uint32_t)(uintptr_t)view, index);
+    return stock_scale((uint32_t)(uintptr_t)view, index);
 }
 
 /* Stock's generic incrementer inlines its signed value read. Preserve its
@@ -205,10 +220,11 @@ __attribute__((naked, used)) void encoder_value(void) {
     __asm__("push {r0-r3,r12,lr}\n mrs r2, apsr\n push {r2,r3}\n"
             "mov r0,r8\n sub.w r1,r10,r8\n lsl.w r1,r1,#6\n orr.w r1,r1,r9\n"
             "bl panel_value\n sxth r6,r0\n pop {r2,r3}\n msr apsr_nzcvqg,r2\n"
-            "pop {r0-r3,r12,lr}\n ldr pc,=0x0802c485\n .ltorg");
+            "pop {r0-r3,r12,lr}\n .reloc ., R_ARM_THM_JUMP24, encoder_resume.abs\n .inst.w 0xf7ffbffe");
 }
 
-static uint32_t scale_track(uint32_t track, uint32_t baseline, uint32_t encoded) {
+/* Keep this loop out of capture: fewer spills in its caller, same stack bound. */
+static __attribute__((noinline)) uint32_t scale_track(uint32_t track, uint32_t baseline, uint32_t encoded) {
     uint32_t base = pattern_address(SEQ, S->pattern);
     uint32_t record = base + S->step * 16u;
     int32_t a = (U8(record + 13u) & (1u << track)) ? U8(record + 8u + track) : baseline;
@@ -253,7 +269,7 @@ static void capture_parameter(uint32_t parameter, uint32_t value) {
     uint32_t baseline = raw_base >> shift;
     uint32_t encoded = (uint8_t)((int16_t)value >> shift);
     if (added) {
-        FN(0x08027fccu, F3)(SEQ, track, parameter);
+        stock_target(SEQ, track, parameter);
         for (uint32_t step = 0; step < 64; ++step) {
             uint32_t cell = base + step * 16u;
             U8(cell + 8u + track) = (uint8_t)(local ? baseline : encoded);
@@ -358,7 +374,7 @@ KEEP void edit_pitch(int32_t delta) {
 }
 
 KEEP uint32_t button(uint32_t panel, uint32_t control, uint32_t flags, uint32_t down) {
-    if (FREAKER_PASSTHROUGH) return FN(0x08043224u, F4)(panel, down, control, flags);
+    if (FREAKER_PASSTHROUGH) return stock_button(panel, down, control, flags);
     if (!down && control == 0x1103u && (S->flags & CONSUMED)) {
         S->flags &= (uint8_t)~CONSUMED;
         if ((S->flags & EDIT) && S->scope && (S->value & COPY) && editor_available()) edit_locks(15, S->value & 63u);
@@ -401,7 +417,7 @@ KEEP uint32_t button(uint32_t panel, uint32_t control, uint32_t flags, uint32_t 
     /* Matrix selection belongs to live lock editing; other workflow buttons
      * retain their stock actions after leaving the editor. */
     if (down && control != 0x804u && control != 0x901u) close_editor();
-    return FN(0x08043224u, F4)(panel, down, control, flags);
+    return stock_button(panel, down, control, flags);
 }
 
 KEEP uint32_t press(uint32_t panel, uint32_t control, uint32_t flags) {
@@ -412,7 +428,7 @@ KEEP uint32_t release(uint32_t panel, uint32_t control, uint32_t flags) {
 }
 
 KEEP uint32_t encoder(uint32_t panel, uint32_t control, uint32_t delta, uint32_t flags) {
-    if (FREAKER_PASSTHROUGH) return FN(0x08042bc8u, F4)(panel, control, delta, flags);
+    if (FREAKER_PASSTHROUGH) return stock_encoder(panel, control, delta, flags);
     /* Physical panel config uses 0x403; 0x402 is the stock unsynced alternate. */
     if ((S->flags & EDIT) && (control == 0x402u || control == 0x403u) && editor_available()) {
         int32_t change = (int16_t)delta;
@@ -439,21 +455,21 @@ KEEP uint32_t encoder(uint32_t panel, uint32_t control, uint32_t delta, uint32_t
     if (control == 0x800u) close_editor();
     S->scope = U8(panel + 0x28u) != 0;
     S->flags |= PANEL_ACTIVE;
-    uint32_t result = FN(0x08042bc8u, F4)(panel, control, delta, flags);
+    uint32_t result = stock_encoder(panel, control, delta, flags);
     S->flags &= (uint8_t)~PANEL_ACTIVE;
     S->scope = 0;
     return result;
 }
 
 KEEP uint32_t pot(uint32_t panel, uint32_t control, uint32_t value, uint32_t flags) {
-    if (FREAKER_PASSTHROUGH) return FN(0x08040220u, F4)(panel, control, value, flags);
+    if (FREAKER_PASSTHROUGH) return stock_pot(panel, control, value, flags);
     uint32_t shift = U8(panel + 0x28u);
     S->scope = shift != 0;
     S->flags |= PANEL_ACTIVE;
     /* Shift is the step-edit modifier here, not the pot's stock alternate
      * destination (for example Rise Shape instead of Rise Time). */
     U8(panel + 0x28u) = (S->flags & EDIT) ? 0 : (uint8_t)shift;
-    uint32_t result = FN(0x08040220u, F4)(panel, control, value, flags);
+    uint32_t result = stock_pot(panel, control, value, flags);
     S->flags &= (uint8_t)~PANEL_ACTIVE;
     U8(panel + 0x28u) = (uint8_t)shift;
     S->scope = 0;
@@ -461,7 +477,7 @@ KEEP uint32_t pot(uint32_t panel, uint32_t control, uint32_t value, uint32_t fla
 }
 
 KEEP uint32_t poll(uint32_t object) {
-    uint32_t result = FN(0x08039da4u, F1)(object);
+    uint32_t result = stock_poll(object);
     if (FREAKER_PASSTHROUGH) return result;
     if (S->close_pending) { S->close_pending = 0; close_editor(); }
     if (S->flags & EDIT) {
@@ -518,18 +534,18 @@ KEEP void draw_editor(void) {
     }
     *out++ = 0;
     U32(REQUEST + 0x7cu) = 0x7fffffffu;
-    FN(0x080557e8u, F3)(WIDGET, 0, 0x7f);
+    stock_text(WIDGET, 0, 0x7f);
     char *part = text;
     while (part < out) {
         uint32_t size = (uint32_t)(out - part);
         if (size > 4u) size = 4;
-        FN(0x080557e8u, F3)(WIDGET, (uint32_t)(uintptr_t)part, size);
+        stock_text(WIDGET, (uint32_t)(uintptr_t)part, size);
         part += size;
     }
-    FN(0x0805579cu, F3)(WIDGET, 0x12, 0x02001a00);
+    stock_widget(WIDGET, 0x12, 0x02001a00);
 }
 
 /* Entered inside stock's request-0x700 display case; stock owns return/timeout. */
 __attribute__((naked, used)) void popup(void) {
-    __asm__("push {r4-r7}\n bl draw_editor\n pop {r4-r7}\n ldr pc, =0x08052c2f\n .ltorg");
+    __asm__("push {r4-r7}\n bl draw_editor\n pop {r4-r7}\n .reloc ., R_ARM_THM_JUMP24, popup_resume.abs\n .inst.w 0xf7ffbffe");
 }

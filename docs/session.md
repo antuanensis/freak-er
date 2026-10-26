@@ -1,15 +1,29 @@
 # Session memory
 
-## Checkpoint status
+## Current size-pass status
 
-The initial Git checkpoint contains r3 source and documented r2 history; see
-[revision records](revisions.md) for all six artifact fingerprints, sizes and
-build commands. It does not reconstruct a historical r2 source commit.
-Shrinking and future feature implementation have not started. Only read-only
-inspection, unchanged-source compiler experiments and baseline tests preceded
-this checkpoint; native source and builder still match the r3 manifest hashes.
-The next development change must be a separate behavior-preserving size pass.
-No remote setup, push, publication or device operation is included.
+The r2/r3 source checkpoint remains commit 6a5c412. The separate r4 source
+checkpoint implements the requested shrink, with no new feature. Native code is
+**3,662/3,809 bytes: 116 saved, 147 remaining**, including literals and alignment.
+The largest current free tail is 133 bytes; runtime stays twelve bytes.
+[Size evidence and r4 artifacts](size-pass.md) record measurements and limits.
+
+Accepted changes: typed direct stock calls/return branches through the pinned
+linker's existing .abs relocations (68 bytes), then out-of-line scaling (48).
+No guard, UI field, destination, persistence contract or stock behavior removed.
+A 3,650-byte candidate was rejected because four paths needed eight more stack
+bytes. Broad compiler-only flags did not help. New manifests record compiler
+arguments, compiler stack frames and per-region occupancy. The internal Python
+build(source=...) option is for reference comparison; CLI commands are unchanged.
+
+All 54 local Python tests pass without skips, including a comparison that runs
+39 native scenarios on both r3 and r4. Sequence/modulation/runtime state, all
+parameter values and captured OLED/page/close messages match. No measured
+operation uses more stack; maximum observed depth falls from 324 to 308 bytes.
+These fixtures exclude construction/USB interrupts and stub queues/final voices;
+this is not hardware stack/timing validation. Keep commit 6a5c412 in development
+history for the comparison test. The user requested the separate r4 commit after
+local validation. No r4 device result or push exists.
 
 ## Current objective and result
 
@@ -19,13 +33,13 @@ first-note editing. A/B, shared 4..64-step length, four tracks, transport, smoot
 and persistence stay stock-owned. Active contract: [spec 004](specs/004-live-editor-operations.md),
 extending spec 003. The broader idea.md remains deferred.
 
-**Experimental r3 is implemented, locally tested and built. No r3 device result.**
+**Experimental r4 preserves all r3 behavior in fewer bytes. No r3/r4 device result.**
 The user reported probability working, then r2 “works well,” before requesting
 these additions. Exact device hashes/conditions were not supplied. Do not invent
 coverage or close the full hardware/MCC/timing gates from that report.
 
-The latest concern was code capacity. r3 fits **3,778 / 3,809 audited bytes**, with
-**31 bytes remaining** and unchanged **twelve-byte runtime state**. Eight unused
+r3 used 3,778/3,809 bytes, leaving 31. r4 now uses **3,662/3,809 audited bytes**,
+with **147 bytes remaining** and unchanged **twelve-byte runtime state**. Eight unused
 factory diagnostics plus an oled-only helper provide space. Diagnostic boot is
 not the bootloader; normal boot audio/conf/filter/ioc remain intact. No extra
 bank, heap or flash writer. More features require measured savings or newly
@@ -89,7 +103,7 @@ and [ADR 0004](adr/0004-bounded-live-editor.md).
   alignment, bounded deterministic whole-function packing and word-aligned Parts.
   No function splitting, arbitrary space or checksum/bootloader/calibration edits.
 
-## Artifacts (local and ignored)
+## Historical r2/r3 artifacts (local and ignored)
 
 Built from exact official input; all three independently rebuilt byte-identically,
 with every JSON manifest field compared. Stock version display remains unchanged.
@@ -107,7 +121,7 @@ passthrough fe9c7a81ad4a1b6d9ecff1fcd4790147be84b1f9db5b6ad916016698881e0d33,
 features d7cfe1fdb83f6dc7b57b8e6c79add83bb187e8f1b80b2754f762cc44325a5abb.
 The older upstream-release.mff contains neither requested sequencer addition.
 
-## Validation
+## Historical checkpoint validation
 
 - 53 local Python tests passed, no skips: 39 native, 10 tooling, 4 stock/model.
 - Includes all 57 recorder parity, actual pot/Type/LFO/matrix paths, global/local
@@ -126,10 +140,12 @@ round trips, stack/timing or endurance proof. No assistant flash occurred.
 
 ## Next action
 
-Finish at a clean r2/r3 Git checkpoint. Begin size optimization separately,
-preserving every r3 feature and existing storage/ABI contracts. Current planning
-leads are direct branches to known stock functions and measured helper reuse;
-compiler-only flags yielded no savings. Do not add features during the shrink.
+The local size-pass stop condition is met: all three r4 artifacts independently
+rebuilt with complete matching manifests; all six older fingerprints are unchanged.
+The r4 source checkpoint includes final diff/documentation/ignore checks.
+Future feature implementation is separate work; no flash or push is included.
+Preserve the r2/r3 checkpoint and all older files; report measured savings and
+remaining capacity without promising that AFX or other additions fit.
 
 Later priorities are AFX-style key recall (four shared continuous targets in an
 optional preset mode reusing sequence storage), Brownian as an existing-LFO mode,
@@ -140,11 +156,11 @@ are acceptable if measured budgets require them; these are research priorities,
 not implemented or guaranteed to fit together. Full AFX engine/sample switching
 and broad patch morphing remain deferred.
 
-Device gates remain independent. Follow [recovery](recovery.md) and record new r3
+Device gates remain independent. Follow [recovery](recovery.md) and record new r4
 placement, passthrough then feature evidence in [hardware validation](hardware-validation.md).
-r2 success cannot validate r3's additional placements/hooks. Keep official recovery
+r2 success cannot validate r4's placements/hooks. Keep official recovery
 and all verified local r2/r3 artifacts. Do not flash, publish or push as part of
-this checkpoint.
+this size pass.
 
 ## Environment and preservation
 

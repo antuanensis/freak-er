@@ -3,7 +3,7 @@
 This repository develops incremental patches for Arturia MicroFreak 5.0.0.2084.
 The C code extends stock sequencing; it must never become a second playback
 engine. Native hooks, RAM, UI and raw persistence now have emulation evidence;
-r2 has a positive user hardware report; r3, MCC compatibility and timing still
+r2 has a positive user hardware report; r3/r4, MCC compatibility and timing still
 require validation. Never describe host tests or a generated MFF as device
 validation.
 
@@ -34,7 +34,7 @@ vision; the ordered queue controls the current implementation scope.
   host test access; see testing.md.
 - `make native-test`: native adapter plus stock routines under Unicorn. Run after
   native C, hook, state-layout or placement changes; includes register/APSR,
-  transport, recorder, smoothing and persistence checks.
+  transport, recorder, smoothing, persistence and r3/candidate equivalence checks.
 - `build --stage placement|passthrough|features`: separate local experiments with
   manifests. Always start from official input; never stack patched images.
 
@@ -75,13 +75,20 @@ vision; the ordered queue controls the current implementation scope.
   set-and-send stay unhooked. Do not restore the cloned recorder/position shim.
 - r3 also owns Oct tap/600-ms delete, Shift+Hold cleanup, Record+Rate+release copy
   and Preset first-note editing. Preserve flags, other chord tones and rests.
-- Code budget is 3,809 audited bytes; r3 uses 3,778. Retire only the eight proven
-  factory commands and oled-only helper. Keep boot audio/conf/filter/ioc intact.
+- Code budget is 3,809 audited bytes; r4 uses 3,662 (r3 used 3,778). Retire only
+  the eight proven factory commands and oled-only helper. Keep boot audio/conf/filter/ioc intact.
   Pack whole functions using actual ELF alignment and word-aligned region Parts.
   Recheck references, input identity, output verification and three staged builds
   after changes. Never solve overflow by using an arbitrary address.
 - UI fields are serialized in main-loop context; random/allowed/close_pending
   remain volatile interrupt-owned fields. Runtime size remains twelve bytes.
+- Preserve direct stock `.abs` calls and out-of-line scaling unless a measured,
+  behavior-equivalent smaller alternative passes the same gates. Do not recover
+  space by weakening guards/metadata validation or removing UI features.
+- Spec 005 and docs/size-pass.md record the r4 size pass. Keep the baseline commit
+  6a5c412 in development history for native equivalence tests. Compare every
+  exercised operation's stack peak, not only the overall maximum. Compiler frame
+  metadata does not include stock callees or naked-function pushes.
 - No production dependencies or broad framework changes without a concrete need.
 
 ## Boundaries and completion
@@ -92,14 +99,15 @@ artifacts ignored. Do not flash hardware, publish, or commit without explicit us
 instruction. Hardware tests belong to the user under `docs/recovery.md`.
 The initial checkpoint contains r3 source and documented r2 history; see
 `docs/revisions.md`. Keep supplied manuals and local editor settings ignored;
-input setup is in `docs/local-inputs.md`. Shrinking and new feature implementation
-are separate work after this checkpoint, with existing behavior preserved.
+input setup is in `docs/local-inputs.md`. r4 is a separate source checkpoint for the size pass
+after that checkpoint; it adds no feature. Further features require new measured
+feasibility work and must preserve the stock-only architecture.
 
 A slice is done when its behavior is tested, relevant commands pass, limitations
 are explicit, and its spec matches reality. Update tasks when priorities/status
 change, replace stale session state, and append meaningful milestones to devlog.
 Record consequential architecture decisions in `docs/adr/`. Never mark a hardware
 gate complete from upstream reports or single-function emulation alone.
-Record r2’s user report without inventing its hash or conditions. Keep r3’s
+Record r2’s user report without inventing its hash or conditions. Keep r3/r4’s
 hardware gates pending until actual target-device results exist. Never replace
 device evidence with emulator results.

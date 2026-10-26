@@ -1,5 +1,8 @@
 # r2/r3 baseline checkpoint
 
+This is the historical checkpoint record. Subsequent r4 measurements and artifacts
+are recorded separately in [the size pass](size-pass.md).
+
 Checkpoint date: 2026-10-26. The initial Git commit contains the current **r3
 source**, plus records of r2's earlier behavior and local artifacts. It does not
 reconstruct separate historical commits or provide a historical r2 source tag.
@@ -111,8 +114,9 @@ Builder SHA-256: `ce46627a926bcc222529d8b14de50d7fe274b637bcbb599016e8dbf0d9c15c
 
 ## Build commands and historical reproducibility
 
-Current checkout builds **r3**. From the repository root, with your own official
-input ([setup](local-inputs.md)) and unused output paths:
+The source at commit `6a5c412` builds **r3**. Current size-pass source builds r4;
+filenames do not select a revision. Use the r3 source checkout for these historical
+commands, with your own official input ([setup](local-inputs.md)) and unused paths:
 
 ```sh
 mkdir -p build
@@ -124,7 +128,7 @@ python3 tools/firmware.py build "$stock_mff" --stage features -o build/freak-er-
 ```
 
 The following are **historical commands**, executed with the r2 source/builder
-before r3 changes. Running them against the current checkout would build r3
+before r3 changes. Running them against another revision would build that revision
 under misleading r2 names; filenames do not select a source revision. The local
 r2 source snapshot is incomplete and is not presented as a reproducible release
 checkout. Keep the verified existing r2 files and manifests locally.

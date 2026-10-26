@@ -1,6 +1,6 @@
 # Native integration evidence
 
-Date: 2026-10-25. Input: official MicroFreak 5.0.0.2084, SHA-256
+Evidence: r3 integration 2026-10-25; r4 size pass 2026-10-26. Input: official MicroFreak 5.0.0.2084, SHA-256
 `c2b405e3c8565b7b73b4dd06522559458190082a8ba633cc5f1bcc43dc64332c`.
 Implementation evidence here comes from static dataflow analysis and Unicorn
 execution. User-reported probability and r2 operation are recorded
@@ -29,6 +29,15 @@ Entry trampolines replay the audited first four bytes and branch to entry + 4.
 The builder accepts only the identified PUSH/MOVW/PUSH+ADD forms. Position getter
 `0x0802821C` and set-and-send `0x0802682C` are unhooked in r3. Input identity, call/vtable targets and the
 inline encoder load's register contract are checked before building.
+
+r4 declares typed stock functions against undefined `.abs` symbols, backed by
+absolute `.equ` addresses. The pinned linker resolves direct Thumb calls and
+inline return branches after placement, using its existing relocation support.
+Targets and calling conventions are the same as r3; literal-loaded function
+pointers are removed. No new stock hook is added. The scaling loop is kept
+out of the capture caller to reduce spills and total code. All 39 native
+scenarios compare identically against committed r3 state/messages, with no
+per-operation observed stack increase; see [size evidence](size-pass.md).
 
 ## Stock ownership and live writing
 
@@ -63,7 +72,7 @@ local edit leaves current output untouched. The next boundary resumes stock
 smoothing. Existing sparse tracks are not automatically repaired.
 
 The previous r2 position-getter replacement clobbered r1/r2, which the stock
-getter preserves, affecting the stock caller and produced a preceding-step interpolation difference. r3 removes
+getter preserves, changing the stock caller’s preceding-step interpolation. r3 removes
 that replacement and output suppression entirely. Playback is compared with
 untouched stock using identical RAM/records over both patterns, all 64 positions
 and three interpolation phases. The signed -1 position sentinel remains stock.
@@ -158,14 +167,17 @@ literal reference at `0x0802EB16` is a Thumb-32 second halfword. The preceding
 function terminates at `0x0802EE37`, with no fall-through. Ownership also follows
 pinned upstream's [free-space evidence](../vendor/ThisFirmwareDoesNotExist/docs/free-space-and-dead-code.md).
 
-Total capacity is **3,809 bytes**; r3 feature/placement code uses **3,778**, leaving
-**31 bytes**. Runtime remains twelve bytes. A deterministic bounded exact packer
+Total capacity is **3,809 bytes**; r4 feature/placement code uses **3,662**, leaving
+**147 bytes** (r3 used 3,778, leaving 31). Runtime remains twelve bytes. A deterministic bounded exact packer
 uses each executable ELF section's actual 2/4-byte alignment, placing word-aligned
 sections first. Whole functions are never split; literal pools stay aligned.
 Sections are merged into word-aligned per-region Parts for upstream verification.
 A second compiler pass must emit identical bytes. Overflow, search exhaustion,
 misalignment, unaudited references and unsupported relocations fail the build.
-Manifests record capacity, section alignment and hashes. MFF checksums and bounds
+Manifests record capacity, section alignment, compiler arguments, compiler stack
+frames, per-region used/free bytes and hashes. Naked assembly pushes and stock
+callees are excluded from compiler frame figures; emulator instrumentation checks
+actual exercised stack paths separately. MFF checksums and bounds
 use upstream verification. Bootloader, calibration and separate OLED images are
 not patched. See [ADR 0004](adr/0004-bounded-live-editor.md).
 

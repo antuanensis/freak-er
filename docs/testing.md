@@ -72,14 +72,29 @@ into an emulated main image and cover:
 - Placement/passthrough stages, reference scans, ELF alignment/nonoverlap/capacity,
   word-aligned region Parts and traps on emulated internal flash/controller writes.
 
-Current local result: **53 Python tests passed, no skips** (39 native, ten tooling,
-four stock/model). All three r3 artifacts were independently rebuilt and matched
-byte-for-byte, including every manifest field. Code sizes: feature/placement
-3,778 of 3,809 bytes; passthrough 1,358; runtime twelve bytes. Working r2 hashes
-remain unchanged. The unchanged upstream suite previously passed all 303 tests;
-it was not rerun for r3. Six reference C groups, ASan/UBSan, the demo, Cortex-M4 reference compilation
-and Ruff lint/format were rerun successfully. These reference checks are separate
-from native r3 feature coverage.
+Current local result: **54 Python tests passed, no skips**: 39 native adapter
+tests, one r3/r4 equivalence test, ten tooling and four stock/model tests. The
+comparison executes all 39 native scenarios on both versions, checking sequence,
+modulation/runtime state, all parameter values, captured OLED/page/close messages
+and per-operation observed stack bounds. It rebuilds the pinned original source
+from Git commit 6a5c412; keep that commit available in development clones. Missing
+Git history, official input or Unicorn causes an explicit skip, not a pass.
+`make native-test` includes both native test modules. Derived metrics stay in
+ignored `build/r4-equivalence.json`; no RAM/firmware dumps are committed.
+
+r4 feature/placement code is 3,662 of 3,809 bytes, 116 fewer than r3; passthrough
+is 1,288. Runtime remains twelve bytes. Maximum observed scenario stack is 308
+versus r3's 324, with no individual operation increase. Compiler frame figures
+exclude stock callees and naked-function pushes; they are not stack-depth proof.
+Construction and hardware interrupts are outside these scenario measurements.
+See [size evidence](size-pass.md) for exact limits and rejected candidates.
+
+All three r4 artifacts independently rebuilt byte-for-byte, with every manifest
+field matching. All six r2/r3 artifact fingerprints were rechecked unchanged.
+Six reference C groups, ASan/UBSan, demo, Cortex-M4 reference compilation and
+Ruff lint/format passed at the checkpoint; core/reference source is unchanged.
+Ruff lint/format passed again for r4. The unchanged upstream previously passed
+303 tests and was not rerun for the size pass.
 
 The build also rejects unresolved/unsupported ELF relocations and unaudited
 prologue forms. Upstream's MFF verifier checks image edits, bounds, alignment and

@@ -1,6 +1,6 @@
 # Installation stages and recovery
 
-The user reports probability and r2 working. r3 has no device result; full
+The user reports probability and r2 working. r3/r4 have no device result; full
 hardware validation remains pending. Native MFF builds are experiments with
 verified containers, not hardware-validated releases. All
 installation steps below are user-operated; repository tools never flash.
@@ -27,9 +27,9 @@ MCC cannot detect the unit. Never modify calibration or the bootloader for recov
 ```sh
 mkdir -p build
 stock_mff="original_firmware/MicroFreak_Firmware_Update_5_0_0_2084.mff"
-python3 tools/firmware.py build "$stock_mff" --stage placement -o build/freak-er-placement-r3.mff
-python3 tools/firmware.py build "$stock_mff" --stage passthrough -o build/freak-er-passthrough-r3.mff
-python3 tools/firmware.py build "$stock_mff" --stage features -o build/freak-er-stock-sequencer-experimental-r3.mff
+python3 tools/firmware.py build "$stock_mff" --stage placement -o build/freak-er-placement-r4.mff
+python3 tools/firmware.py build "$stock_mff" --stage passthrough -o build/freak-er-passthrough-r4.mff
+python3 tools/firmware.py build "$stock_mff" --stage features -o build/freak-er-stock-sequencer-experimental-r4.mff
 ```
 
 Matching JSON manifests record input/output/source/builder hashes, compiler,
@@ -77,12 +77,12 @@ removed. Copy has no additional indicator. Stock sparse hold/smoothing remain;
 removing a lock can leave the preceding value sounding. See the complete
 [controls and examples](../README.md#live-editor-controls).
 
-r3 uses additional retired factory code regions, so r2 device success does not
-replace placement/passthrough validation for r3. Retain the working r2 images and
-matching manifests as well as untouched official stock. No r3 installation has
-been performed by the assistant.
+r4 preserves r3’s controls and regions while changing code placement. r2 device
+success does not replace staged validation of r4. Retain r2/r3 images and matching
+manifests as well as untouched official stock. No r3/r4 installation has been
+performed by the assistant. See [r4 measurements and hashes](size-pass.md).
 
 Log results and hashes in [hardware validation](hardware-validation.md), including
 clock conditions, duration and comparison to stock. No numeric timing tolerance
-has been established; derive it from stock measurements before acceptance. No complete r3 boot, recovery, timing, physical-control or endurance gate has
+has been established; derive it from stock measurements before acceptance. No complete r4 boot, recovery, timing, physical-control or endurance gate has
 been marked passed.

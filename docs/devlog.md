@@ -183,3 +183,40 @@
   contains only text files; firmware/manual/editor/build inputs stay ignored.
 - No remote configuration, push, publication or assistant-operated flash is
   included. The user will create the remote repository separately.
+
+## 2026-10-26 — r4 behavior-preserving sequencer shrink
+
+- Started from clean source checkpoint 6a5c412; no additional feature implemented.
+  Replaced fixed-address function-pointer calls and inline return literals with
+  typed direct Thumb calls/branches using existing upstream .abs relocations.
+  This saved 68 bytes; all 39 native tests passed at that step.
+- Kept the proportional scaling loop out of capture, reducing caller spills and
+  saving another 48 bytes. Final feature/placement size is 3,662/3,809 bytes:
+  116 saved (3.1%), 147 free, largest current free region tail 133. Runtime stays twelve bytes.
+- Tested selective helper/inlining candidates. A 3,650-byte candidate matched
+  behavior but increased four operation stack peaks by eight bytes; rejected it.
+  Broader compiler flags and other helper changes offered no accepted saving.
+- Added repeatable r3/candidate comparison using original native source from Git
+  history: all 39 scenarios retain sequence/modulation/runtime/parameter state
+  and captured OLED/page/close messages. No operation stack peak increases;
+  maximum observed depth falls from 324 to 308 bytes. Fixtures exclude construction,
+  USB interrupts, audio rendering and full peripheral/voice execution.
+- All 54 local Python tests passed without skips. Manifest tests cover code-region
+  accounting and compiler/stack metadata. Ruff lint/format passed. Core and pinned
+  vendor source remain unchanged; earlier checkpoint C/upstream evidence retained.
+- Built separate r4 placement/passthrough/features MFFs with matching manifests.
+  Passthrough uses 1,288 bytes. All three artifacts independently rebuilt with
+  matching bytes and every manifest field; all six r2/r3 fingerprints are unchanged. Added size evidence, spec 005 and updated current
+  development/install/test guidance. r2/r3 files and source commit preserved.
+- No feature removed, new RAM/code region used, metadata changed, stock position
+  hook restored, flash call added, commit made or remote/device operation run.
+  r3/r4 hardware/MCC/timing gates remain open. More features need measured fit.
+
+## 2026-10-26 — r4 source checkpoint
+
+- The user requested a separate commit of the completed r4 shrink before reviewing
+  the previously selected feature priorities. Updated the handoff to reflect this
+  source checkpoint; future feature implementation has not started.
+- Retained the 54-test local result and reproducible three-stage artifacts for
+  unchanged native source and tooling. Firmware, private analysis, supplied manual
+  and local editor settings remain ignored. No push or device operation is included.

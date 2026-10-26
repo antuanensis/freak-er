@@ -125,12 +125,18 @@ def displaced_prologue(payload: bytes, original: int, destination: int) -> bytes
     return raw + thumb.b_w(destination + 4, original + 4)
 
 
-def section_alignments(source: Path, sections: dict[str, bytes]) -> dict[str, int]:
-    """Read ELF alignment without changing the pinned assembler's interface."""
+def section_metadata(source: Path, sections: dict[str, bytes]) -> tuple[dict[str, int], dict[str, int]]:
+    """Read alignment and compiler stack frames from an identical second pass."""
     with tempfile.TemporaryDirectory() as directory:
         output = Path(directory) / "alignment.o"
-        subprocess.run(["clang", *LINKER.CLANG_ARGS, str(source), "-o", str(output)], check=True)
+        subprocess.run(["clang", *LINKER.CLANG_ARGS, "-fstack-usage", str(source), "-o", str(output)], check=True)
         elf = output.read_bytes()
+        stack = {}
+        for line in output.with_suffix(".su").read_text().splitlines():
+            function, size, kind = line.split("\t")
+            if kind != "static":
+                raise ValueError("native code requires a dynamic stack frame")
+            stack[function.rsplit(":", 1)[1]] = int(size)
     names, headers = LINKER._headers(elf)
     alignment = {}
     for name, header in zip(names, headers, strict=True):
@@ -141,7 +147,7 @@ def section_alignments(source: Path, sections: dict[str, bytes]) -> dict[str, in
             if align not in (2, 4) or (align == 4 and len(sections[name]) % 4):
                 raise ValueError(f"unsupported native section alignment: {name}")
             alignment[name] = align
-    return alignment
+    return alignment, stack
 
 
 def place_sections(sections: dict[str, bytes], alignment: dict[str, int]) -> dict[str, int]:
@@ -195,10 +201,12 @@ def place_sections(sections: dict[str, bytes], alignment: dict[str, int]) -> dic
     return placement
 
 
-def build(raw: bytes, *, stage: str = "features") -> tuple[Patch, dict]:
+def build(raw: bytes, *, stage: str = "features", source: Path | None = None) -> tuple[Patch, dict]:
     if stage not in ("placement", "passthrough", "features"):
         raise ValueError("unknown native build stage")
     hooks = stage != "placement"
+    # An explicit source permits comparison with the committed r3 reference.
+    source = source or ROOT / "native/stock_sequencer.c"
     firmware.inspect(raw)
     update = firmware.mff.Update.from_bytes(raw)
     payload = firmware.mff.main_payload(update.read(update.main_name))
@@ -235,9 +243,10 @@ def build(raw: bytes, *, stage: str = "features") -> tuple[Patch, dict]:
     if stage == "passthrough":
         LINKER.CLANG_ARGS += ["-DFREAKER_PASSTHROUGH=1"]
     try:
-        sections, symbols, relocations = LINKER.assemble(ROOT / "native/stock_sequencer.c")
+        sections, symbols, relocations = LINKER.assemble(source)
         sections = {k: v for k, v in sections.items() if v}
-        alignment = section_alignments(ROOT / "native/stock_sequencer.c", sections)
+        alignment, stack = section_metadata(source, sections)
+        compiler_arguments = list(LINKER.CLANG_ARGS)
     finally:
         LINKER.CLANG_ARGS = arguments
     place = place_sections(sections, alignment)
@@ -315,12 +324,23 @@ def build(raw: bytes, *, stage: str = "features") -> tuple[Patch, dict]:
         "device_tested": False,
         "stage": stage,
         "input_sha256": hashlib.sha256(raw).hexdigest(),
-        "source_sha256": hashlib.sha256((ROOT / "native/stock_sequencer.c").read_bytes()).hexdigest(),
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "upstream_revision": "083b15cabde98fc31eb89b40562aeeea38224968",
         "compiler": subprocess.run(
             ["clang", "--version"], check=True, capture_output=True, text=True
         ).stdout.splitlines()[0],
+        "compiler_arguments": compiler_arguments,
+        "stack_frame_bytes": stack,
+        "regions": [
+            {
+                "start": lo,
+                "end": hi,
+                "used_bytes": sum(len(c) for s, c in code.items() if lo <= place[s] < hi),
+                "free_bytes": hi - lo - sum(len(c) for s, c in code.items() if lo <= place[s] < hi),
+            }
+            for lo, hi in REGIONS
+        ],
         "sections": {s: {"address": place[s], "bytes": len(c), "alignment": alignment[s]} for s, c in code.items()},
     }
     return patch, report

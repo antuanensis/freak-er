@@ -3,10 +3,12 @@
 Experimental MicroFreak firmware based on [idea.md](idea.md) and the pinned
 [ThisFirmwareDoesNotExist](https://github.com/ThisFreakDoesntExist/ThisFirmwareDoesNotExist) framework.
 
-**Current delivery: experimental r3**, extending the stock sequencer with
-per-step probability, live locks and first-note editing. Stock retains A/B,
+**Current delivery: experimental r4**, preserving r3’s stock sequencer features:
+per-step probability, live locks and first-note editing, in 116 fewer code bytes.
+Stock retains A/B,
 4..64 steps, clock/notes and four assignable modulation tracks. The user reports
-r2 working on the device; **r3 has passed local tests but has no device result**.
+r2 working on the device; **r3/r4 have no device result**. r4 passed local tests
+and comparison against the committed r3 source.
 See [device evidence](docs/hardware-validation.md).
 
 ## Live editor controls
@@ -59,12 +61,14 @@ See [full behavior contract](docs/specs/004-live-editor-operations.md).
 
 ## Capacity
 
-r3 uses **3,778 / 3,809 audited code bytes**, leaving **31 bytes**, and twelve
+r4 uses **3,662 / 3,809 audited code bytes**, leaving **147 bytes**, and twelve
 runtime bytes. It retires eight unused factory console diagnostics to provide
 space, including their diagnostic `boot` command; the bootloader and normal boot
 initialization are untouched. No new sequence/clipboard bank or heap is added.
 Future features need measured savings or newly proven space. This is close to
-the current placement limit, not a platform with room for the whole idea.md.
+the current placement limit; the whole idea.md is not promised to fit. The
+[measured size pass](docs/size-pass.md) records savings, rejected candidates and
+unchanged behavior. The largest current unused region tail is 133 bytes.
 
 ## Build and test
 
@@ -91,9 +95,9 @@ see [local input setup](docs/local-inputs.md).
 mkdir -p build
 stock_mff="original_firmware/MicroFreak_Firmware_Update_5_0_0_2084.mff"
 python3 tools/firmware.py inspect "$stock_mff"
-python3 tools/firmware.py build "$stock_mff" --stage placement -o build/freak-er-placement-r3.mff
-python3 tools/firmware.py build "$stock_mff" --stage passthrough -o build/freak-er-passthrough-r3.mff
-python3 tools/firmware.py build "$stock_mff" --stage features -o build/freak-er-stock-sequencer-experimental-r3.mff
+python3 tools/firmware.py build "$stock_mff" --stage placement -o build/freak-er-placement-r4.mff
+python3 tools/firmware.py build "$stock_mff" --stage passthrough -o build/freak-er-passthrough-r4.mff
+python3 tools/firmware.py build "$stock_mff" --stage features -o build/freak-er-stock-sequencer-experimental-r4.mff
 ```
 
 Each build gets a matching JSON manifest with hashes, compiler, placement and
@@ -112,7 +116,7 @@ neither sequencer addition and is not included in these native builds.
 - [Active specification](docs/specs/004-live-editor-operations.md)
 - [Architecture](docs/architecture.md), [native contracts and memory evidence](docs/native-integration.md)
 - [Testing and limitations](docs/testing.md), [development log](docs/devlog.md)
-- [r2/r3 checkpoint, build history and fingerprints](docs/revisions.md)
+- [r2/r3 checkpoint and fingerprints](docs/revisions.md), [r4 size pass and fingerprints](docs/size-pass.md)
 - [Original stock probes](docs/stock-sequencer-findings.md), [upstream provenance](vendor/README.md)
 
 Only original source/patch definitions may be distributed. Do not publish Arturia

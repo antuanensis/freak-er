@@ -1,7 +1,8 @@
 # Spec 004: live editor operations
 
 Status: Implemented in experimental r3; local validation passed. Device testing
-pending. Extends spec 003.
+pending. Extends spec 003. r4 preserves this behavior; see
+[spec 005](005-sequencer-size-pass.md) for its size-only changes.
 
 The user reports r2 working and requests stock destination coverage, per-step
 lock removal/cleanup/copy, Shift-scoped edits, and live note changes. Stock still

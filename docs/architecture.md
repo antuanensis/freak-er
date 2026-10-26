@@ -49,12 +49,15 @@ scanner and patch verifier. It checks the official input, hook targets, displace
 instruction forms and retired-region references. Trampoline fragments come from
 the user's official file during building. Generated firmware stays ignored. r3 packs whole functions by actual ELF alignment
 into 3,809 proven bytes: append space, eight retired factory diagnostic commands
-and an oled-only helper. Feature code uses 3,778 bytes; further features need code
-savings or new placement evidence. Normal boot initialization stays intact.
+and an oled-only helper. r4 code uses 3,662 bytes, 116 fewer than r3, by direct stock calls and selective
+scaling-loop extraction. All behavior is preserved; further features still need
+measured savings or new placement evidence. Normal boot initialization stays intact.
 
 `tools/firmware.py build` creates placement, passthrough or feature experiments
 and a manifest recording hashes, compiler, region placement and stage. Existing
-outputs are never replaced. The separate `baseline` command still reproduces
+outputs are never replaced. Manifests also record executable compiler arguments,
+compiler stack frames and per-region occupancy. The Python-only `source` option
+can rebuild the committed r3 reference for equivalence tests. The separate `baseline` command still reproduces
 upstream Release only; that patch is not included in these sequencer builds.
 
 `core/freaklocks.c` remains the portable behavioral model, with a 144-byte host
