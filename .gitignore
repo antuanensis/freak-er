@@ -1,0 +1,22 @@
+# Proprietary inputs and generated firmware must remain local.
+original_firmware/
+*.mff
+*.bin
+*.hex
+*.elf
+*.o
+
+# Local editor preferences and the user-supplied Arturia manual.
+.vscode/
+/docs/microfreak_Manual_5_0_1_EN.pdf
+
+build/
+dist/
+.cache/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
